@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import "./addresspoints.js";
+import { addressPoints } from "./addressPoints.js";
 import "leaflet.heat";
 import L from "leaflet";
 
@@ -17,15 +17,33 @@ const useScreenSize = () => {
 
 const HeatLayer = () => {
   const map = useMap();
+
   useEffect(() => {
-    if (!window.addressPoints) return;
-    const points = window.addressPoints.map(p => [p[0], p[1]]);
-    L.heatLayer(points, { radius: 25 }).addTo(map);
+    if (!addressPoints || addressPoints.length === 0) return;
+
+    const points = addressPoints.map(p => [p[0], p[1]]);
+
+    const heat = L.heatLayer(points, { 
+      radius: 25, 
+      blur: 15, 
+      maxZoom: 15,
+      minOpacity: 0.3,
+      max: 1.0,
+      gradient: {0.4: 'blue', 0.65: 'lime', 1: 'red'}
+    }).addTo(map);
+
+    if (heat._canvas) {
+      heat._canvas.style.opacity = "0.4";
+    }
+
   }, [map]);
+
   return null;
 };
 
-const Map = ({ aqiData }) => {
+ 
+
+const Map = () => {
   const width = useScreenSize();
   const isMobile = width < 640;
 
@@ -34,12 +52,6 @@ const Map = ({ aqiData }) => {
     : "calc(100vh - 100px)";
 
   const zoomLevel = width < 640 ? 10 : width < 1024 ? 11 : 12;
-
-  const locations = aqiData.map((loc) => ({
-    lat: loc.lat ?? 14.5995, // fallback if missing
-    lng: loc.lng ?? 120.9842,
-    ...loc,
-  }));
 
   return (
     <div className="w-full flex justify-center px-2 sm:px-4 lg:px-8">
@@ -59,20 +71,7 @@ const Map = ({ aqiData }) => {
             attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-
           <HeatLayer />
-
-          {locations.map((loc, idx) => (
-            <Marker key={idx} position={[loc.lat, loc.lng]}>
-              <Popup>
-                <div className="bg-gray-800 p-4 rounded-xl text-white">
-                  <h2 className="text-lg font-semibold">{loc.location}</h2>
-                  <p className="text-sm text-gray-300">AQI: {loc.aqi}</p>
-                  <p className="text-sm">Category: {loc.category}</p>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
         </MapContainer>
       </div>
     </div>

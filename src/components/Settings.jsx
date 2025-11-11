@@ -9,7 +9,7 @@ const Settings = ({ darkMode: initialDarkMode = true, onThemeChange, alertThresh
     if (onThemeChange) onThemeChange(darkMode ? "dark" : "light");
   }, [darkMode, onThemeChange]);
 
-  // Update threshold dynamically
+  // Update Alert dynamically
   useEffect(() => {
     if (onThresholdChange) onThresholdChange(alertThreshold);
   }, [alertThreshold, onThresholdChange]);

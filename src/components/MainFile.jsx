@@ -5,31 +5,47 @@ import Dashboard from "./Dashboard.jsx";
 import Map from "./Map.jsx";
 import Alerts from "./Alerts.jsx";
 import Settings from "./Settings.jsx";
+import { addressPoints } from "./addressPoints.js";
+//import { supabase } from "./supabaseClient.js";
+
+const generateRandomAQI = () => {
+  const aqi = Math.floor(Math.random() * 201);
+  const pm25 = Math.floor(Math.random() * 151);
+  const pm10 = Math.floor(Math.random() * 181);
+  const co = (Math.random() * 10).toFixed(1);
+
+  let category;
+    if (aqi < 50) category = "Low";
+    else if (aqi < 100) category = "Moderate";
+    else category = "High";
+  return { aqi, category, pm25, pm10, co };
+};
 
 const MainFile = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [theme, setTheme] = useState("dark");
 
-const aqiData = [
-  { location: "Metro Manila", aqi: 72, category: "High", forecast: [68, 70, 74, 80, 76] },
-  { location: "Caloocan", aqi: 65, category: "Moderate", forecast: [60, 62, 70, 68, 75] },
-  { location: "Valenzuela", aqi: 42, category: "Low", forecast: [40, 45, 50, 55, 48] },
-  { location: "Makati", aqi: 85, category: "High", forecast: [80, 82, 87, 90, 85] },
-  { location: "Quezon City", aqi: 58, category: "Moderate", forecast: [55, 60, 65, 62, 58] },
-  { location: "Pasig", aqi: 35, category: "Low", forecast: [30, 32, 38, 36, 34] },
-];
+  const aqiData = addressPoints.map(([lat, lng, psgc]) => {
+    const { aqi, category, pm25, pm10, co } = generateRandomAQI();
+    return {
+      location: `Baranggay ${psgc}`,
+      lat,
+      lng,
+      aqi,
+      category,
+      pm25,
+      pm10,
+      co,
+      forecast: Array.from({ length: 5 }, () => Math.floor(Math.random() * 201)),
+    };
+  });
 
   // Generate alerts
   const generateAlerts = (data) => {
-    return data.map(city => {
-      let severity;
-      if (city.aqi < 50) severity = "Low";
-      else if (city.aqi < 100) severity = "Moderate";
-      else severity = "High";
-
+    return data.slice(0, 10).map(city => { // limit to 10 alerts
       return {
-        message: `${severity} AQI in ${city.location}`,
-        severity,
+        message: `${city.category} AQI in ${city.location}`,
+        severity: city.category,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
     });
@@ -37,13 +53,26 @@ const aqiData = [
 
   const alerts = generateAlerts(aqiData);
 
-  return (
+ return (
     <div className={`min-h-screen flex flex-col items-center py-6 px-4 lg:px-10 pb-24 lg:pb-6 ${theme === "dark" ? "bg-gray-950 text-white" : "bg-white text-black"}`}>
       <h1 className="text-lg lg:text-2xl font-semibold mb-3 text-center">{activeTab}</h1>
 
-      {activeTab === "Dashboard" && <Dashboard aqiData={aqiData} />}
-      {activeTab === "Map" && <Map aqiData={aqiData}/>}
-      {activeTab === "Alerts" && <Alerts alertData={alerts} />}
+      {activeTab === "Dashboard" && (
+        <div className="w-full md:pl-20">
+          <Dashboard aqiData={aqiData.slice(0, 9)} />
+        </div>
+        )} 
+      {/* only show 9 */}
+      {activeTab === "Map" && (
+        <div className="w-full md:pl-20">
+          <Map aqiData={aqiData} />
+        </div>
+      )}
+      {activeTab === "Alerts" && (
+        <div className="w-full md:pl-20">
+          <Alerts alertData={alerts} />
+        </div>
+      )}
       {activeTab === "Settings" && <Settings onThemeChange={(t) => setTheme(t)}/>}
 
       {/* Mobile NavBar */}
@@ -55,9 +84,7 @@ const aqiData = [
         ].map((tab) => (
           <button
             key={tab.name}
-            className={`flex flex-col items-center text-sm cursor-pointer ${
-              activeTab === tab.name ? "text-white" : "text-gray-500"
-            }`}
+            className={`flex flex-col items-center text-sm cursor-pointer ${activeTab === tab.name ? "text-white" : "text-gray-500"}`}
             onClick={() => setActiveTab(tab.name)}
           >
             {tab.icon}
@@ -68,17 +95,14 @@ const aqiData = [
 
       {/* Desktop + Tablet NavBar */}
       <div className="hidden md:fixed md:left-0 md:top-0 md:h-full md:w-20 md:bg-gray-900 md:flex md:flex-col md:items-center md:py-6 md:gap-6 border-r border-gray-700">
-        {[
-          { name: "Dashboard", icon: <FiHome size={20} /> },
+        {[{ name: "Dashboard", icon: <FiHome size={20} /> },
           { name: "Map", icon: <FiMap size={20} /> },
           { name: "Alerts", icon: <FiBell size={20} /> },
           { name: "Settings", icon: <FiSettings size={20} /> },
         ].map((tab) => (
           <button
             key={tab.name}
-            className={`flex flex-col items-center text-sm ${
-              activeTab === tab.name ? "text-white" : "text-gray-500"
-            }`}
+            className={`flex flex-col items-center text-sm ${activeTab === tab.name ? "text-white" : "text-gray-500"}`}
             onClick={() => setActiveTab(tab.name)}
           >
             {tab.icon}
@@ -86,7 +110,6 @@ const aqiData = [
           </button>
         ))}
       </div>
-
     </div>
   );
 };
