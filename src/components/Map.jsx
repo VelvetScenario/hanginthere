@@ -7,25 +7,22 @@ import L from "leaflet";
 
 const useScreenSize = () => {
   const [width, setWidth] = useState(window.innerWidth);
-
   useEffect(() => {
     const handleResize = () => setWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
   return width;
 };
 
 const HeatLayer = () => {
   const map = useMap();
-
   useEffect(() => {
-    const points = window.addressPoints.map((p) => { return [p[0], p[1]] });
-
+    if (!window.addressPoints) return;
+    const points = window.addressPoints.map(p => [p[0], p[1]]);
     L.heatLayer(points, { radius: 25 }).addTo(map);
-
   }, [map]);
+  return null;
 };
 
 const Map = ({ aqiData }) => {
@@ -33,11 +30,17 @@ const Map = ({ aqiData }) => {
   const isMobile = width < 640;
 
   const mapHeight = isMobile
-    ? `${window.innerHeight - 140}px`
+    ? `${window.innerHeight - 140 || 700}px`
     : "calc(100vh - 100px)";
 
   const zoomLevel = width < 640 ? 10 : width < 1024 ? 11 : 12;
-  
+
+  const locations = aqiData.map((loc) => ({
+    lat: loc.lat ?? 14.5995, // fallback if missing
+    lng: loc.lng ?? 120.9842,
+    ...loc,
+  }));
+
   return (
     <div className="w-full flex justify-center px-2 sm:px-4 lg:px-8">
       <div className="w-full max-w-[1400px] rounded-2xl overflow-hidden shadow-lg">
@@ -45,7 +48,7 @@ const Map = ({ aqiData }) => {
           center={[14.5995, 120.9842]}
           zoom={zoomLevel}
           scrollWheelZoom={false}
-          minZoom={8} 
+          minZoom={8}
           maxZoom={15}
           maxBounds={[[4.414956, 116.887956], [21.121781, 126.605044]]}
           maxBoundsViscosity={1}
@@ -57,17 +60,16 @@ const Map = ({ aqiData }) => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {/* Heatmap */}
           <HeatLayer />
 
-          {aqiData?.map((loc, idx) => (
+          {locations.map((loc, idx) => (
             <Marker key={idx} position={[loc.lat, loc.lng]}>
               <Popup>
                 <div className="bg-gray-800 p-4 rounded-xl text-white">
                   <h2 className="text-lg font-semibold">{loc.location}</h2>
                   <p className="text-sm text-gray-300">AQI: {loc.aqi}</p>
                   <p className="text-sm">Category: {loc.category}</p>
-                </div >
+                </div>
               </Popup>
             </Marker>
           ))}
