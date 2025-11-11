@@ -38,12 +38,11 @@ const aqiData = [
   const alerts = generateAlerts(aqiData);
 
   return (
-    <div className={theme === "dark" ? "min-h-screen bg-gray-950 text-white flex flex-col items-center py-6 px-4 lg:px-10 pb-24 lg:pb-6" 
-                            : "min-h-screen bg-white text-black flex flex-col items-center py-6 px-4 lg:px-10 pb-24 lg:pb-6"}>
+    <div className={`min-h-screen flex flex-col items-center py-6 px-4 lg:px-10 pb-24 lg:pb-6 ${theme === "dark" ? "bg-gray-950 text-white" : "bg-white text-black"}`}>
       <h1 className="text-lg lg:text-2xl font-semibold mb-3 text-center">{activeTab}</h1>
 
       {activeTab === "Dashboard" && <Dashboard aqiData={aqiData} />}
-      {activeTab === "Map" && <Map />}
+      {activeTab === "Map" && <Map aqiData={aqiData}/>}
       {activeTab === "Alerts" && <Alerts alertData={alerts} />}
       {activeTab === "Settings" && <Settings onThemeChange={(t) => setTheme(t)}/>}
 
