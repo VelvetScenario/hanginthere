@@ -6,9 +6,10 @@ import styled from 'styled-components';
  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
  position: relative;
  overflow: hidden;
- width: 678px;
- max-width: 100%;
+ width: 90%;
+ max-width: 678px;
  min-height: 400px;
+ padding: 20px
  `;
 
  export const SignUpContainer = styled.div`
@@ -54,6 +55,7 @@ import styled from 'styled-components';
  export const Title = styled.h1`
  font-weight: bold;
  margin: 0;
+ font-size: clamp(18px, 5.58vw, 48px);
  `;
  
  export const Input = styled.input`

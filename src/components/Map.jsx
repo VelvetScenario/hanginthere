@@ -59,9 +59,9 @@ const Map = () => {
         <MapContainer
           center={[14.5995, 120.9842]}
           zoom={zoomLevel}
-          scrollWheelZoom={false}
-          minZoom={8}
-          maxZoom={15}
+          scrollWheelZoom={true}
+          minZoom={12}
+          maxZoom={18}
           maxBounds={[[4.414956, 116.887956], [21.121781, 126.605044]]}
           maxBoundsViscosity={1}
           style={{ width: "100%", height: mapHeight }}
