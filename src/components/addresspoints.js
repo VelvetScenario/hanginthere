@@ -1,4 +1,6 @@
-    //[latitude, longitude, barangay, city, 10-digit PSGC]
+import { fetchLatestCitiesFromSupabase } from "./pages/cityapi.jsx";
+
+//[latitude, longitude, barangay, city, 10-digit PSGC]
 export const addressPoints = [
     [14.599204, 120.973801, 'Barangay 287', 'Manila', '1380602001'],
     [14.601486, 120.973914, 'Barangay 288', 'Manila', '1380602002'],
@@ -1700,3 +1702,34 @@ export const addressPoints = [
     [14.62169, 120.964344, 'Barangay 97', 'Manila', '1380601097'],
     [14.627483, 120.962356, 'Barangay 98', 'Manila', '1380601098'],
     [14.625196, 120.963611, 'Barangay 99', 'Manila', '1380601099']]
+
+ export async function getAddressPointsWithAQI() {
+  try {
+    const latest = await fetchLatestCitiesFromSupabase();
+    const lookup = {};
+    (latest || []).forEach((c) => {
+      if (c && c.City) lookup[c.City.toLowerCase()] = Number.isFinite(c.aqius) ? Math.round(c.aqius) : null;
+    });
+
+    const enriched = addressPoints.map((p) => {
+      const cityKey = (p[3] || "").toLowerCase();
+      const aqius = lookup.hasOwnProperty(cityKey) ? lookup[cityKey] : null;
+      const copy = [...p];
+      copy.splice(2, 0, aqius); // insert aqius at third position
+      return copy; // [lat, lon, aqius, barangay, city, psgc]
+    });
+
+    console.log("getAddressPointsWithAQI - first enriched item:", enriched[0]);
+
+    return enriched;
+  } catch (err) {
+    console.error("getAddressPointsWithAQI error:", err);
+    const fallback = addressPoints.map((p) => {
+      const copy = [...p];
+      copy.splice(2, 0, null);
+      return copy;
+    });
+    console.log("getAddressPointsWithAQI - fallback (first):", fallback[0]);
+    return fallback;
+  }
+}

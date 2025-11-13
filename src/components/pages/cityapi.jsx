@@ -20,7 +20,33 @@ const cities = [
   "Muntinlupa",
 ];
 
-const REFRESH_INTERVAL = 4 * 60; //naguupdate every 4 minutes
+export async function fetchLatestCitiesFromSupabase() {
+  try {
+    const { data: allData, error } = await supabase
+      .from("AQI Data")
+      .select("*")
+      .in("City", cities);
+
+    if (error) throw error;
+
+    const latestData = cities.map((city) => {
+      const cityRows = (allData || []).filter(
+        (row) => row.City && row.City.toLowerCase() === city.toLowerCase()
+      );
+      if (!cityRows.length) return { City: city, missing: true };
+      return cityRows.reduce((prev, current) =>
+        prev.id > current.id ? prev : current
+      );
+    });
+
+    return latestData;
+  } catch (err) {
+    console.error("fetchLatestCitiesFromSupabase error:", err);
+    return cities.map((city) => ({ City: city, missing: true }));
+  }
+}
+
+const REFRESH_INTERVAL = 120 * 60; //naguupdate every 2 hours
 const LatestCities = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -6,6 +6,7 @@ import "leaflet.heat";
 import L from "leaflet";
 import "leaflet-routing-machine";
 import { fixedData } from "./pages/cityexpi.jsx";
+import { getAddressPointsWithAQI } from "./addressPoints.js";
 
 const useScreenSize = () => {
   const [width, setWidth] = useState(window.innerWidth);
@@ -21,23 +22,39 @@ const HeatLayer = () => {
   const map = useMap();
 
   useEffect(() => {
-    if (!addressPoints || addressPoints.length === 0) return;
+    if (!map) return;
+    let heat = null;
+    (async () => {
+      // enriched: [lat, lon, aqius, barangay, city, psgc]
+      const enriched = await getAddressPointsWithAQI();
 
-    const points = addressPoints.map(p => [p[0], p[1]]);
+      // normalization: map AQI 0 -> 0, 300+ -> 1, clamp in-between
+      const MAX_AQI = 300;
+      const GAMMA = 1.0;
+      const points = enriched.map((p) => {
+        const lat = Number(p[0]);
+        const lon = Number(p[1]);
+        const aqi = Number.isFinite(p[2]) ? Number(p[2]) : 0;
+        let intensity = aqi / MAX_AQI;
+        intensity = Math.max(0, Math.min(1, intensity)); // clamp 0..1
+        if (GAMMA !== 1.0) intensity = Math.pow(intensity, GAMMA);
+        return [lat, lon, intensity];
+      });
 
-    const heat = L.heatLayer(points, { 
-      radius: 25, 
-      blur: 15, 
-      maxZoom: 15,
-      minOpacity: 0.3,
-      max: 1.0,
-      gradient: {0.4: 'blue', 0.65: 'lime', 1: 'red'}
-    }).addTo(map);
+      heat = L.heatLayer(points, {
+        radius: 25,
+        blur: 15,
+        maxZoom: 15,
+        minOpacity: 0.3,
+        gradient: { 0.0: "blue", 0.5: "lime", 1.0: "red" },
+      }).addTo(map);
 
-    if (heat._canvas) {
-      heat._canvas.style.opacity = "0.4";
-    }
+      if (heat._canvas) heat._canvas.style.opacity = "0.8";
+    })();
 
+    return () => {
+      if (heat && map.removeLayer) map.removeLayer(heat);
+    };
   }, [map]);
 
   return null;
