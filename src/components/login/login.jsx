@@ -107,7 +107,19 @@ function Login() {
             <Components.Title style={{ color: "#8e2bff" }}>Log In</Components.Title>
             <Components.Input type="email" name="email" placeholder="Email" required />
             <Components.Input type="password" name="password" placeholder="Password" required />
-            <Components.Anchor href="#">Forgot your password?</Components.Anchor>
+            
+            <Components.Anchor
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                alert(
+                  "If you’ve forgotten your password, please reach out to our personnel at HanginThereSWE@gmail.com for assistance."
+                );
+              }}
+            >
+              Forgot your password?
+            </Components.Anchor>
+            
             <Components.Button type="submit">Log In</Components.Button>
           </Components.Form>
         </Components.SignInContainer>
