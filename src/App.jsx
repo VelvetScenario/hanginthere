@@ -10,7 +10,6 @@ function App() {
 
         <Route path="/" element={<Login />} />
 
-      
         <Route path="/MainFile" element={<MainFile />} />
       </Routes>
     </Router>
