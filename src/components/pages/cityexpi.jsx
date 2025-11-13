@@ -1,6 +1,6 @@
 import React from "react";
 
-const fixedData = [
+export const fixedData = [
   {
     city: "Caloocan",
     tp: 30,

@@ -25,10 +25,11 @@ const MainFile = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [theme, setTheme] = useState("dark");
 
-  const aqiData = addressPoints.map(([lat, lng, psgc]) => {
+  const aqiData = addressPoints.map(([lat, lng, brgy, mun]) => {
     const { aqi, category, pm25, pm10, co } = generateRandomAQI();
     return {
-      location: `Baranggay ${psgc}`,
+      location: `${brgy}`,
+      municipality: `${mun}`,
       lat,
       lng,
       aqi,
@@ -44,7 +45,7 @@ const MainFile = () => {
   const generateAlerts = (data) => {
     return data.slice(0, 10).map(city => { // limit to 10 alerts
       return {
-        message: `${city.category} AQI in ${city.location}`,
+        message: `${city.category} AQI in ${city.location}, ${city.municipality}`,
         severity: city.category,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
