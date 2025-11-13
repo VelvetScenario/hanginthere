@@ -1,47 +1,138 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { supabase } from "../../services/supabaseClients";
 
-const API_KEY = "bb55e0b6-6158-4a00-bfa4-ee8f09a72c4f";
+const cities = [
+  "Caloocan",
+  "Malabon",
+  "Navotas",
+  "Valenzuela",
+  "Quezon City",
+  "Marikina",
+  "Pasig",
+  "Taguig",
+  "Makati",
+  "Manila",
+  "Mandaluyong",
+  "San Juan",
+  "Pasay",
+  "Parañaque",
+  "Las Piñas",
+  "Muntinlupa",
+];
 
-const locations = {
-  "Caloocan": { lat: 14.65, lon: 120.97 },
-  "Malabon": { lat: 14.6579, lon: 120.9571 },
-  "Navotas": { lat: 14.6545, lon: 120.9449 },
-  "Valenzuela": { lat: 14.6995, lon: 120.9852 },
-  "Quezon City": { lat: 14.6760, lon: 121.0437 },
-  "Marikina": { lat: 14.6760, lon: 121.0437 },
-  "Pasig": { lat: 14.5764, lon: 121.0851 },
-  "Taguig": { lat: 14.52, lon: 121.05 },
-  "Makati": { lat: 14.5547, lon: 121.0244 },
-  "Manila": { lat: 14.5995, lon: 120.9842 },
-  "Mandaluyong": { lat: 14.5833, lon: 121.0333 },
-  "San Juan": { lat: 14.6, lon: 121.035 },
-  "Pasay": { lat: 14.5333, lon: 121.0 },
-  "Parañaque": { lat: 14.5167, lon: 121.0 },
-  "Las Piñas": { lat: 14.45, lon: 120.9833 },
-  "Muntinlupa": { lat: 14.4089, lon: 121.0266 }
-};
+const REFRESH_INTERVAL = 4 * 60; //naguupdate every 4 minutes
+const LatestCities = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [timer, setTimer] = useState(REFRESH_INTERVAL);
 
-const FetchAPI = () => {
+  const fetchLatestCities = async () => {
+    setLoading(true);
+    try {
+      const { data: allData, error } = await supabase
+        .from("AQI Data")
+        .select("*")
+        .in("City", cities);
+
+      if (error) {
+        console.error("Error fetching data:", error.message);
+        setData([]);
+        return;
+      }
+
+      const latestData = cities.map((city) => {
+        const cityRows = allData.filter(
+          (row) => row.City.toLowerCase() === city.toLowerCase()
+        );
+        if (!cityRows.length) return { City: city, missing: true };
+        return cityRows.reduce((prev, current) =>
+          prev.id > current.id ? prev : current
+        );
+      });
+
+      setData(latestData);
+      setLastUpdated(new Date());
+      setTimer(REFRESH_INTERVAL);
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      for (const [city, coords] of Object.entries(locations)) {
-        try {
-          const res = await fetch(
-            `https://api.airvisual.com/v2/nearest_city?lat=${coords.lat}&lon=${coords.lon}&key=${API_KEY}`
-          );
-          const data = await res.json();
-          console.log(city, data);
-        } catch (err) {
-          console.error(city, err);
-        }
-      }
-    };
+    fetchLatestCities();
 
-    fetchData();
+    const interval = setInterval(fetchLatestCities, REFRESH_INTERVAL * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  return <div>Fetching AirVisual API data… </div>;
+  // Timer countdown effect
+  useEffect(() => {
+    const countdown = setInterval(() => {
+      setTimer((prev) => (prev > 0 ? prev - 1 : REFRESH_INTERVAL));
+    }, 1000);
+
+    return () => clearInterval(countdown);
+  }, []);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  if (loading) return <p>Loading latest city data...</p>;
+
+  return (
+    <div>
+      <h1>Latest Metro Manila City Data</h1>
+      <p>
+        Last Updated:{" "}
+        {lastUpdated ? lastUpdated.toLocaleString() : "Loading..."} | Next
+        update in: {formatTime(timer)}
+      </p>
+
+      {data.map((cityData) =>
+        cityData.missing ? (
+          <div key={cityData.City}>
+            <h2>{cityData.City}</h2>
+            <p>No data available.</p>
+          </div>
+        ) : (
+          <div
+            key={cityData.City}
+            style={{
+              marginBottom: "1rem",
+              borderBottom: "1px solid #ccc",
+              paddingBottom: "0.5rem",
+            }}
+          >
+            <h2>{cityData.City}</h2>
+            <ul>
+              <li>ID: {cityData.id}</li>
+              <li>IC: {cityData.ic}</li>
+              <li>Temperature: {cityData.tp}</li>
+              <li>Humidity: {cityData.hu}</li>
+              <li>Pressure: {cityData.pr}</li>
+              <li>Wind Direction: {cityData.wd}</li>
+              <li>Wind Speed: {cityData.ws}</li>
+              <li>Heat Index: {cityData.heatIndex}</li>
+              <li>AQI US: {cityData.aqius}</li>
+              <li>Main US Pollutant: {cityData.mainus}</li>
+              <li>AQI CN: {cityData.aqicn}</li>
+              <li>Main CN Pollutant: {cityData.maincn}</li>
+            </ul>
+          </div>
+        )
+      )}
+    </div>
+  );
 };
 
-export default FetchAPI;
+export default LatestCities;
