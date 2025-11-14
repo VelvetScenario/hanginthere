@@ -9,9 +9,9 @@ import { addressPoints } from "./addressPoints.js";
 //import { supabase } from "./supabaseClient.js";
 
 const generateRandomAQI = () => {
-  const aqi = Math.floor(Math.random() * 201);
-  const pm25 = Math.floor(Math.random() * 151);
-  const pm10 = Math.floor(Math.random() * 181);
+  const aqi = Math.floor(Math.random() * 100);
+  const pm25 = Math.floor(Math.random() * 100);
+  const pm10 = Math.floor(Math.random() * 100);
   const co = (Math.random() * 10).toFixed(1);
 
   let category;
@@ -43,7 +43,7 @@ const MainFile = () => {
 
   // Generate alerts
   const generateAlerts = (data) => {
-    return data.slice(0, 10).map(city => { // limit to 10 alerts
+    return data.slice(0, 20).map(city => { // limit to 10 alerts
       return {
         message: `${city.category} AQI in ${city.location}, ${city.municipality}`,
         severity: city.category,
@@ -60,7 +60,7 @@ const MainFile = () => {
 
       {activeTab === "Dashboard" && (
         <div className="w-full md:pl-20">
-          <Dashboard aqiData={aqiData.slice(0, 9)} />
+          <Dashboard aqiData={aqiData.slice(0, 20)} />
         </div>
         )} 
       {/* only show 9 */}
@@ -103,7 +103,7 @@ const MainFile = () => {
         ].map((tab) => (
           <button
             key={tab.name}
-            className={`flex flex-col items-center text-sm ${activeTab === tab.name ? "text-white" : "text-gray-500"}`}
+            className={`flex flex-col items-center text-sm w-20 h-30 ${activeTab === tab.name ? "text-white" : "text-gray-500"}`}
             onClick={() => setActiveTab(tab.name)}
           >
             {tab.icon}
