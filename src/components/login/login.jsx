@@ -75,8 +75,8 @@ function Login() {
             </Components.Title>
             <Components.Input
               type="text"
-              name="name"
-              placeholder="Name"
+              name="username"
+              placeholder="Username"
               onChange={handleChange}
               value={formData.name}
               required
