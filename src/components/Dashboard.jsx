@@ -152,25 +152,6 @@ const Dashboard = ({ aqiData }) => {
                   <div className="mt-4">
 
                     <div className="flex gap-2">
-                      {city.forecast.map((value, idx) => (
-                        <div
-                          key={idx}
-                          className={`flex-1 bg-gray-700 rounded-lg overflow-hidden h-4 ${
-                            value < 60
-                              ? "bg-green-500"
-                              : value < 100
-                              ? "bg-yellow-500"
-                              : "bg-red-500"
-                          }`}
-                        ></div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-400 mb-1">Trend (last 24h)</p>
-                    <div className="w-full h-16 bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 text-xs">
-                      Chart placeholder
                     </div>
                   </div>
                 </>

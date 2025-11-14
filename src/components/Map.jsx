@@ -67,6 +67,7 @@ const AQIRouteLayer = ({ startPSGC, endPSGC }) => {
     if (!map) return;
     if (!startPSGC || !endPSGC) return;
 
+    // build points with AQI from fixedData (keeps existing behavior)
     const points = addressPoints.map((p) => {
       const cityInfo = fixedData.find((c) => c.city === p[3]);
       return {
@@ -80,8 +81,10 @@ const AQIRouteLayer = ({ startPSGC, endPSGC }) => {
     });
 
     const validIds = points.map((p) => p.id);
-    if (!validIds.includes(startPSGC) || !validIds.includes(endPSGC)) {
-      console.error("Invalid PSGC code(s) provided.");
+    const startId = String(startPSGC);
+    const endId = String(endPSGC);
+    if (!validIds.includes(startId) || !validIds.includes(endId)) {
+      console.error("Invalid PSGC code(s) provided.", { startId, endId });
       return;
     }
 
@@ -112,19 +115,19 @@ const AQIRouteLayer = ({ startPSGC, endPSGC }) => {
       graph.set(p1.id, edges);
     });
 
-    function findLeastToxicPath(startId, endId) {
+    function findLeastToxicPath(startIdLocal, endIdLocal) {
       const costs = {};
       const prev = {};
       const visited = new Set();
       points.forEach((p) => (costs[p.id] = Infinity));
-      costs[startId] = 0;
+      costs[startIdLocal] = 0;
 
       while (visited.size < points.length) {
         const [current] =
           Object.entries(costs)
             .filter(([id]) => !visited.has(id))
             .sort((a, b) => a[1] - b[1])[0] || [];
-        if (!current || current === endId) break;
+        if (!current || current === endIdLocal) break;
         visited.add(current);
 
         for (const edge of graph.get(current) || []) {
@@ -137,7 +140,7 @@ const AQIRouteLayer = ({ startPSGC, endPSGC }) => {
       }
 
       const path = [];
-      let curr = endId;
+      let curr = endIdLocal;
       while (curr) {
         const node = points.find((p) => p.id === curr);
         if (!node) break;
@@ -147,24 +150,36 @@ const AQIRouteLayer = ({ startPSGC, endPSGC }) => {
       return path;
     }
 
-    const startId = String(1380100135);
-    const endId = String(1380300005);
-    const route = findLeastToxicPath(startId, endId);
+    // compute path using provided start/end
+    const aqiPath = findLeastToxicPath(startId, endId);
 
+    // create routing control using simplified waypoints (avoids excessive waypoint count)
     let routingControl = null;
-    if (route.length >= 2) {
+    if (aqiPath && aqiPath.length >= 2) {
+      const simplifiedWaypoints = [
+        L.latLng(aqiPath[0][0], aqiPath[0][1]),
+        ... (aqiPath.length > 4
+          ? [L.latLng(aqiPath[Math.floor(aqiPath.length / 2)][0], aqiPath[Math.floor(aqiPath.length / 2)][1])]
+          : []),
+        L.latLng(aqiPath[aqiPath.length - 1][0], aqiPath[aqiPath.length - 1][1]),
+      ];
+
       routingControl = L.Routing.control({
-        waypoints: route.map(([lat, lon]) => L.latLng(lat, lon)),
-        createMarker: () => null,
+        waypoints: simplifiedWaypoints,
         routeWhileDragging: false,
+        createMarker: () => null,
         lineOptions: { styles: [{ color: "green", weight: 5 }] },
       }).addTo(map);
-    try {
-      const bounds = L.latLngBounds(route.map(([lat, lon]) => L.latLng(lat, lon)));
-      map.fitBounds(bounds, { padding: [50, 50] });
-      } catch (e) {}
-    } 
 
+      try {
+        const bounds = L.latLngBounds(aqiPath.map(([lat, lon]) => L.latLng(lat, lon)));
+        map.fitBounds(bounds, { padding: [50, 50] });
+      } catch (e) {
+        // ignore fitBounds errors
+      }
+    }
+
+    // draw node markers
     const createdMarkers = points.map((p) => {
       const color = p.aqi < 70 ? "green" : p.aqi < 85 ? "orange" : "red";
       const m = L.circleMarker([p.lat, p.lon], {

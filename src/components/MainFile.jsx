@@ -103,7 +103,7 @@ const MainFile = () => {
         ].map((tab) => (
           <button
             key={tab.name}
-            className={`flex flex-col items-center text-sm ${activeTab === tab.name ? "text-white" : "text-gray-500"}`}
+            className={`flex flex-col items-center text-sm w-20 h-30 ${activeTab === tab.name ? "text-white" : "text-gray-500"}`}
             onClick={() => setActiveTab(tab.name)}
           >
             {tab.icon}
