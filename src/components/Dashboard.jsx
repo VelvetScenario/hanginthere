@@ -26,8 +26,8 @@ const Dashboard = ({ aqiData }) => {
     }))
   );
 
-  const [countdown, setCountdown] = useState(240);
-  const totalCountdown = 240;
+  const [countdown, setCountdown] = useState(7200);
+  const totalCountdown = 7200;
 
   // Timer + randomizer
   useEffect(() => {
