@@ -1,24 +1,35 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-const Settings = ({ darkMode: initialDarkMode = true, onThemeChange, alertThreshold: initialThreshold = "Moderate", onThresholdChange }) => {
+const Settings = ({
+  darkMode: initialDarkMode = true,
+  onThemeChange,
+  alertThreshold: initialThreshold = "Moderate",
+  onThresholdChange,
+}) => {
   const [darkMode, setDarkMode] = useState(initialDarkMode);
   const [alertThreshold, setAlertThreshold] = useState(initialThreshold);
+  const navigate = useNavigate(); // Must be inside BrowserRouter
 
-  // Update theme dynamically
   useEffect(() => {
     if (onThemeChange) onThemeChange(darkMode ? "dark" : "light");
   }, [darkMode, onThemeChange]);
 
-  // Update Alert dynamically
+
   useEffect(() => {
     if (onThresholdChange) onThresholdChange(alertThreshold);
   }, [alertThreshold, onThresholdChange]);
+
+
+  const handleLogout = () => {
+
+    navigate("/"); 
+  };
 
   return (
     <div className="w-full max-w-3xl mx-auto p-4 flex flex-col gap-6">
       <h2 className="text-xl font-semibold mb-4">Settings</h2>
 
-      {/* Theme Toggle */}
       <div className="flex items-center justify-between p-4 bg-gray-800 rounded-xl">
         <span>Dark Mode</span>
         <input
@@ -29,7 +40,6 @@ const Settings = ({ darkMode: initialDarkMode = true, onThemeChange, alertThresh
         />
       </div>
 
-      {/* Alert Threshold */}
       <div className="flex flex-col p-4 bg-gray-800 rounded-xl">
         <label className="mb-2">Alert Threshold</label>
         <select
@@ -43,10 +53,13 @@ const Settings = ({ darkMode: initialDarkMode = true, onThemeChange, alertThresh
         </select>
       </div>
 
-      {/* About */}
-      <div className="p-4 bg-gray-800 rounded-xl text-gray-300 text-sm">
-        <p>Air Quality Dashboard v1.0</p>
-        <p>Developed by You</p>
+      <div className="p-4 bg-gray-800 rounded-xl text-center">
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 transition"
+        >
+          Log Out
+        </button>
       </div>
     </div>
   );

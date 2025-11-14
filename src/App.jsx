@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./components/login/login"; 
+import Login from "./components/login/login";
+import setting from "./components/Settings";
 import MainFile from "./components/MainFile"; 
 import CityAPI from "./components/pages/cityapi";
 import AQIRouteMap from "./components/AQIRouteMap";
@@ -11,7 +12,7 @@ function App() {
       <Routes>
 
         <Route path="/" element={<Login />} />
-
+        <Route path="/setting" element={<setting />} />
         <Route path="/MainFile" element={<MainFile />} />
       </Routes>
     </Router>

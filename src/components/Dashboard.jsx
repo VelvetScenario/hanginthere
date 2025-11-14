@@ -58,9 +58,10 @@ const Dashboard = ({ aqiData }) => {
   }, []);
 
   const formatCountdown = (seconds) => {
-    const mins = Math.floor(seconds / 60);
+    const hour = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    return `${hour}:${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
   const progressPercent = (countdown / totalCountdown) * 100;
