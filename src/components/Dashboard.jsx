@@ -26,8 +26,8 @@ const Dashboard = ({ aqiData }) => {
     }))
   );
 
-  const [countdown, setCountdown] = useState(7200);
-  const totalCountdown = 7200;
+  const [countdown, setCountdown] = useState(240);
+  const totalCountdown = 240;
 
   // Timer + randomizer
   useEffect(() => {
@@ -58,10 +58,9 @@ const Dashboard = ({ aqiData }) => {
   }, []);
 
   const formatCountdown = (seconds) => {
-    const hour = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
+    const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${hour}:${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
   const progressPercent = (countdown / totalCountdown) * 100;
@@ -153,7 +152,11 @@ const Dashboard = ({ aqiData }) => {
                   <div className="mt-4">
 
                     <div className="flex gap-2">
+                      
                     </div>
+                  </div>
+
+                  <div className="mt-4">
                   </div>
                 </>
               )}

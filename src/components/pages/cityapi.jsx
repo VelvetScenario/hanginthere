@@ -46,7 +46,7 @@ export async function fetchLatestCitiesFromSupabase() {
   }
 }
 
-const REFRESH_INTERVAL = 120 * 60; //naguupdate every 2 hours
+const REFRESH_INTERVAL = 4 * 60; //naguupdate every 4 mins
 const LatestCities = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
