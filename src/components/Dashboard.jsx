@@ -1,9 +1,88 @@
 import { useState, useEffect } from "react";
+import { supabase } from "../services/supabaseClients";
 
-const Dashboard = ({ aqiData }) => {
+const cities = [
+  "Caloocan",
+  "Malabon",
+  "Navotas",
+  "Valenzuela",
+  "Quezon City",
+  "Marikina",
+  "Pasig",
+  "Taguig",
+  "Makati",
+  "Manila",
+  "Mandaluyong",
+  "San Juan",
+  "Pasay",
+  "Parañaque",
+  "Las Piñas",
+  "Muntinlupa",
+];
+
+const REFRESH_INTERVAL = 4 * 60; // 4 minutes
+
+export async function fetchLatestCitiesFromSupabase() {
+  try {
+    const { data: allData, error } = await supabase
+      .from("AQI Data")
+      .select("*")
+      .in("City", cities);
+
+    if (error) throw error;
+
+    const latestData = cities.map((city) => {
+      const cityRows = (allData || []).filter(
+        (row) => row.City && row.City.toLowerCase() === city.toLowerCase()
+      );
+      if (!cityRows.length) return { City: city, missing: true };
+      return cityRows.reduce((prev, current) =>
+        prev.id > current.id ? prev : current
+      );
+    });
+
+    return latestData;
+  } catch (err) {
+    console.error("fetchLatestCitiesFromSupabase error:", err);
+    return cities.map((city) => ({ City: city, missing: true }));
+  }
+}
+
+const Dashboard = ({ theme }) => {
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1024
   );
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
+  const [expandedCard, setExpandedCard] = useState(null);
+
+  const isMobile = windowWidth < 768;
+
+  const fetchLatestData = async () => {
+    setLoading(true);
+    const latest = await fetchLatestCitiesFromSupabase();
+    const mappedData = latest.map((city) => ({
+      ...city,
+      location: city.City,
+      aqi: city.aqius || 0,
+      category:
+        city.aqius <= 50
+          ? "Low"
+          : city.aqius <= 100
+          ? "Moderate"
+          : "High",
+    }));
+    setData(mappedData);
+    setCountdown(REFRESH_INTERVAL);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchLatestData();
+    const interval = setInterval(fetchLatestData, REFRESH_INTERVAL * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -11,49 +90,11 @@ const Dashboard = ({ aqiData }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const isMobile = windowWidth < 768;
-  const [expandedCard, setExpandedCard] = useState(null);
-
-  const [localData, setLocalData] = useState(
-    aqiData.map((city) => ({
-      ...city,
-      pollutants: [
-        { name: "PM2.5", value: Math.floor(Math.random() * 100) },
-        { name: "PM10", value: Math.floor(Math.random() * 100) },
-        { name: "CO", value: Math.floor(Math.random() * 10) },
-      ],
-      forecast: Array.from({ length: 5 }, () => Math.floor(Math.random() * 150)),
-    }))
-  );
-
-  const [countdown, setCountdown] = useState(240);
-  const totalCountdown = 240;
-
-  // Timer + randomizer
+  // Countdown timer
   useEffect(() => {
     const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          setLocalData((prevData) =>
-            prevData.map((city) => ({
-              ...city,
-              aqi: Math.floor(Math.random() * 200),
-              pollutants: [
-                { name: "PM2.5", value: Math.floor(Math.random() * 100) },
-                { name: "PM10", value: Math.floor(Math.random() * 100) },
-                { name: "CO", value: Math.floor(Math.random() * 10) },
-              ],
-              forecast: Array.from({ length: 5 }, () =>
-                Math.floor(Math.random() * 150)
-              ),
-            }))
-          );
-          return totalCountdown;
-        }
-        return prev - 1;
-      });
+      setCountdown((prev) => (prev > 0 ? prev - 1 : REFRESH_INTERVAL));
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
@@ -63,16 +104,16 @@ const Dashboard = ({ aqiData }) => {
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const progressPercent = (countdown / totalCountdown) * 100;
+  const progressPercent = (countdown / REFRESH_INTERVAL) * 100;
+
+  if (loading) return <p>Loading latest city data...</p>;
 
   return (
     <>
       <div className="flex items-center mb-4">
-        {/* Countdown text */}
-        <div className="text-gray-300 text-sm font-medium mr-3">
+        <div className={`text-sm font-medium mr-3 ${theme === "dark" ? "text-white" : "text-black"}`}>
           Next update: <span className="font-bold">{formatCountdown(countdown)}</span>
         </div>
-
 
         <div className="flex-1 bg-gray-700 h-2 rounded overflow-hidden">
           <div
@@ -83,22 +124,20 @@ const Dashboard = ({ aqiData }) => {
       </div>
 
       <div
-        className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full 
-          max-w-full lg:max-w-[calc(100%-5rem)] 
-          px-4 lg:px-0`}
+        className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-full lg:max-w-[calc(100%-5rem)] px-4 lg:px-0`}
       >
-        {localData.map((city, index) => {
+        {data.map((cityData, index) => {
           const aqiColor =
-            city.category === "Low"
+            cityData.category === "Low"
               ? "bg-green-500"
-              : city.category === "Moderate"
+              : cityData.category === "Moderate"
               ? "bg-yellow-500"
               : "bg-red-500";
 
           const recommendation =
-            city.category === "Low"
+            cityData.category === "Low"
               ? "Air quality is good 🌤"
-              : city.category === "Moderate"
+              : cityData.category === "Moderate"
               ? "Sensitive groups take caution ⚠️"
               : "Limit outdoor activity 😷";
 
@@ -110,54 +149,45 @@ const Dashboard = ({ aqiData }) => {
 
           return (
             <div
-              key={index}
-              className="bg-gray-800 rounded-2xl p-5 sm:p-6 shadow-lg transition-transform hover:scale-[1.02] relative cursor-pointer"
+              key={cityData.City}
+              className={`rounded-2xl p-5 sm:p-4 shadow-lg transition-transform hover:scale-[1.02] relative cursor-pointer
+                ${theme === "dark" ? "bg-gray-800 text-white" : "bg-gray-200 text-black"}`}
               onClick={handleCardClick}
             >
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-base sm:text-lg font-semibold">{city.location}</h2>
-                  <p className="text-4xl sm:text-5xl font-bold">{city.aqi}</p>
-                  <p className="text-xs sm:text-sm text-gray-300">{city.category}</p>
+                  <h2 className="text-base sm:text-lg font-semibold">{cityData.location}</h2>
+                  <p className="text-4xl sm:text-5xl font-bold">{cityData.aqi}</p>
+                  <p className={`text-xs sm:text-sm ${theme === "dark" ? "text-white" : "text-black"}`}>
+                    {cityData.category}
+                  </p>
                 </div>
 
-                <div
-                  className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-sm font-semibold ${aqiColor}`}
-                >
-                  {city.category}
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-sm font-semibold ${aqiColor}`}>
+                  {cityData.category}
                 </div>
               </div>
 
-              {showExpanded && (
+              {showExpanded && !cityData.missing && (
                 <>
-                  <p className="mt-3 text-sm text-gray-200">{recommendation}</p>
+                  <p className={`mt-3 text-sm ${theme === "dark" ? "text-white" : "text-black"}`}>
+                    {recommendation}
+                  </p>
 
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    {city.pollutants.map((p, idx) => (
-                      <span
-                        key={idx}
-                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                          p.value < 50
-                            ? "bg-green-500"
-                            : p.value < 100
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
-                        }`}
-                      >
-                        {p.name}: {p.value}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="mt-4">
-
-                    <div className="flex gap-2">
-                      
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                  </div>
+                  <ul className="mt-2 text-sm">
+                    <li>ID: {cityData.id}</li>
+                    <li>IC: {cityData.ic}</li>
+                    <li>Temperature: {cityData.tp}</li>
+                    <li>Humidity: {cityData.hu}</li>
+                    <li>Pressure: {cityData.pr}</li>
+                    <li>Wind Direction: {cityData.wd}</li>
+                    <li>Wind Speed: {cityData.ws}</li>
+                    <li>Heat Index: {cityData.heatIndex}</li>
+                    <li>AQI US: {cityData.aqius}</li>
+                    <li>Main US Pollutant: {cityData.mainus}</li>
+                    <li>AQI CN: {cityData.aqicn}</li>
+                    <li>Main CN Pollutant: {cityData.maincn}</li>
+                  </ul>
                 </>
               )}
 

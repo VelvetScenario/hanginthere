@@ -60,7 +60,7 @@ const MainFile = () => {
 
       {activeTab === "Dashboard" && (
         <div className="w-full md:pl-20">
-          <Dashboard aqiData={aqiData.slice(0, 20)} />
+          <Dashboard aqiData={aqiData.slice(0, 20)} theme={theme}/>
         </div>
         )} 
       {/* only show 9 */}
